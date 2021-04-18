@@ -10,9 +10,10 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  double _numberForm;
+  double _numberFrom;
   String _startMeasure;
   String _convertedMeasure;
+  String _resultMessage;
 
   final List<String> _measures = [
     'meters',
@@ -25,20 +26,40 @@ class MyAppState extends State<MyApp> {
     'ounces'
   ];
 
+  final Map<String, int> _measuresMap = {
+    'meters': 0,
+    'kilometers': 1,
+    'gram': 2,
+    'kilograms': 3,
+    'feet': 4,
+    'miles': 5,
+    'pounds (lbs)': 6,
+    'ounces': 7
+  };
+
+  final dynamic _formulas = {
+    '0': [1, 0.001, 0, 0, 3.28084, 0.000621371, 0, 0],
+    '1': [1000, 1, 0, 0, 3280.84, 0.621371, 0, 0],
+    '2': [0, 0, 1, 0.0001, 0, 0, 0.00220462, 0.035274],
+    '3': [0, 0, 1000, 1, 0, 0, 2.20462, 35.274],
+    '4': [0.3048, 0.0003048, 0, 0, 1, 0.000189394, 0, 0],
+    '5': [1609.34, 1.60934, 0, 0, 5280, 1, 0, 0],
+    '6': [0, 0, 453.592, 0.453592, 0, 0, 1, 16],
+    '7': [0, 0, 28.3495, 0.0283495, 3.28084, 0, 0.0625, 1],
+  };
+
+  final TextStyle inputStyle = TextStyle(fontSize: 20, color: Colors.blue[900]);
+
+  final TextStyle labelStyle = TextStyle(fontSize: 24, color: Colors.grey[700]);
+
   @override
   void initState() {
-    _numberForm = 0;
+    _numberFrom = 0;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle inputStyle =
-        TextStyle(fontSize: 20, color: Colors.blue[900]);
-
-    final TextStyle labelStyle =
-        TextStyle(fontSize: 24, color: Colors.grey[700]);
-
     return MaterialApp(
       title: "Unit converter",
       home: Scaffold(
@@ -64,7 +85,7 @@ class MyAppState extends State<MyApp> {
                     var rv = double.tryParse(text);
                     if (rv != null) {
                       setState(() {
-                        _numberForm = rv;
+                        _numberFrom = rv;
                       });
                     }
                   },
@@ -108,18 +129,43 @@ class MyAppState extends State<MyApp> {
                     value: _convertedMeasure),
                 Spacer(flex: 2),
                 ElevatedButton(
-                    onPressed: () => true,
+                    onPressed: () {
+                      if (_startMeasure.isEmpty ||
+                          _convertedMeasure.isEmpty ||
+                          _numberFrom == 0) {
+                        return;
+                      } else {
+                        convert(_numberFrom, _startMeasure, _convertedMeasure);
+                      }
+                    },
                     child: Text(
                       "Convert",
                       style: inputStyle,
                     )),
                 Spacer(flex: 2),
-                Text((_numberForm == null) ? "" : _numberForm.toString(),
+                Text((_resultMessage == null) ? "" : _resultMessage,
                     style: labelStyle),
                 Spacer(flex: 8)
               ],
             )),
       ),
     );
+  }
+
+  void convert(double value, String from, String to) {
+    int nFrom = _measuresMap[from];
+    int nTo = _measuresMap[to];
+    var multiplier = _formulas[nFrom.toString()][nTo];
+    var result = value * multiplier;
+
+    if (result == 0) {
+      _resultMessage = 'This conversion cannot be performed';
+    } else {
+      _resultMessage =
+          '${nFrom.toString()} $_startMeasure are ${result.toString()} $_convertedMeasure';
+    }
+    setState(() {
+      _resultMessage = _resultMessage;
+    });
   }
 }
